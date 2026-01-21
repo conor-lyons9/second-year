@@ -86,8 +86,87 @@ def worker(lock, name, hole):
 def assignDiggers():
     lock2 = Lock()
     
-    letters = ["A", "B", "C"]
-    for i in range(3):
+    letters = ["A", "B", "C", "D", "E"]
+    for i in range(len(letters)):
         Process(target=worker, args=(lock2, letters[i], i)).start()
 
-assignDiggers()
+#
+
+import time
+
+def greet2(q):
+    for i in range(5):
+        print("\n(child process) Waiting for name...")
+        name = q.get()
+        print("(child process) Well, hi", name)
+
+def sendName2():
+    q = Queue()
+
+    p1 = Process(target=greet2, args=(q,))
+    p1.start()
+
+    names = ["Ciaran", "Sam", "Daniel", "AJ", "Sé"]
+    for i in range(len(names)):
+        time.sleep(1) # wait
+        print("(parent process) Ok, I'll send the name")
+        q.put(names[i])
+
+#
+
+def slowpoke(lock):
+    time.sleep(2)
+    lock.acquire()
+    print("Slowpoke: Ok, I'm coming")
+    lock.release()
+
+def haveToWait():
+    lock = Lock()
+    p1 = Process(target=slowpoke, args=(lock,))
+    p1.start()
+    print("Waiter: Any day now...")
+
+    p1.join()
+    print("Waiter: Finally! Geez.")
+
+#
+
+def addTwoNumbers(a, b, q):
+    time.sleep(2) # In case you want to slow things down to see what is happening.
+    q.put(a+b)
+
+def addTwoPar():
+    x = int(input("Enter first number: "))
+    y = int(input("Enter second number: "))
+
+    q = Queue()
+    p1 = Process(target=addTwoNumbers, args=(x, y, q))
+    p1.start()
+
+    print(q.get())
+
+#
+
+from multiprocessing import *
+from random import randint
+import time
+def addManyNumbers(numNumbers, q):
+    s = 0
+    for i in range(numNumbers):
+        s = s + randint(1, 100)
+    q.put(s)
+
+def addManyPar():
+    totalNumNumbers = 1000000
+
+    q = Queue()
+    p1 = Process(target=addManyNumbers, args=(totalNumNumbers//2, q))
+    p2 = Process(target=addManyNumbers, args=(totalNumNumbers//2, q))
+    p1.start()
+    p2.start()
+
+    answerA = q.get()
+    answerB = q.get()
+    print("Sum:", answerA + answerB)
+
+addManyPar()
